@@ -33,6 +33,7 @@ export default function App() {
             <li><span className="text-blue-400">📁 nigeria_solar_ai/</span></li>
             <li className="pl-4">📄 run_windows.bat <span className="text-emerald-400">(Click to Run - Windows)</span></li>
             <li className="pl-4">📄 run_mac_linux.sh <span className="text-emerald-400">(Click to Run - Mac/Linux)</span></li>
+            <li className="pl-4">📄 PROJECT_DOCUMENTATION.md <span className="text-emerald-400">(Comprehensive Project Report)</span></li>
             <li className="pl-4">📄 app.py <span className="text-neutral-600">(Flask Server)</span></li>
             <li className="pl-4">📄 fetch_data.py <span className="text-neutral-600">(NASA & OpenWeatherMap API)</span></li>
             <li className="pl-4">📄 train_models.py <span className="text-neutral-600">(ANN, CNN, CNN-LSTM)</span></li>
@@ -47,16 +48,16 @@ export default function App() {
           <div className="flex items-start gap-4">
             <div className="bg-neutral-800 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 text-white font-bold">1</div>
             <div>
-              <p className="font-medium text-white">Export Workspace</p>
-              <p className="text-sm text-neutral-400">Click the <strong className="text-neutral-300">Share / Export</strong> menu in AI Studio and select <strong className="text-neutral-300">Export to ZIP</strong>.</p>
+              <p className="font-medium text-white">Export to GitHub</p>
+              <p className="text-sm text-neutral-400">Select the <strong className="text-emerald-400">Export to GitHub</strong> option in the settings menu to push this code to a new repository.</p>
             </div>
           </div>
           
           <div className="flex items-start gap-4">
             <div className="bg-neutral-800 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 text-white font-bold">2</div>
             <div>
-              <p className="font-medium text-white">Extract and Run</p>
-              <p className="text-sm text-neutral-400 mb-2">Extract the ZIP file and simply double-click the run script for your operating system.</p>
+              <p className="font-medium text-white">Clone and Run</p>
+              <p className="text-sm text-neutral-400 mb-2">Clone the GitHub repository to your local machine, open the folder, and double-click the run script for your operating system.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2">
                   <p className="text-xs text-neutral-500 font-bold mb-1">Windows</p>
