@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="font-bold text-gray-800">Live Prediction</h1>
+    <p class="text-gray-500">Estimate real-time PV generation capacity.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- Input Form -->
+    <div class="space-y-6">
+        <!-- City Selection -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Select Location</label>
+            <select id="predict-city" class="block w-full rounded-md border-gray-300 border px-3 py-3 w-full min-h-[44px] mb-4">
+                <option value="">Loading...</option>
+            </select>
+            
+            <button id="predict-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 min-h-[44px] shadow-sm transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                Predict from Live Weather
+            </button>
+            <p id="error-msg" class="text-red-500 text-sm hidden"></p>
+        </div>
+        
+        <!-- Live Weather Display -->
+        <div class="bg-blue-50 rounded-xl border border-blue-100 p-6">
+            <h3 class="font-semibold text-blue-900 mb-4 border-b border-blue-200 pb-2">Current Conditions</h3>
+            <div id="weather-loading" class="text-blue-600 text-sm"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Fetching weather data...</div>
+            <div id="weather-info" class="hidden grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-blue-500 uppercase tracking-wide">Temp</p>
+                    <p class="font-bold text-blue-900 text-lg"><span id="w-temp">-</span>&deg;C</p>
+                </div>
+                <div>
+                    <p class="text-xs text-blue-500 uppercase tracking-wide">Humidity</p>
+                    <p class="font-bold text-blue-900 text-lg"><span id="w-hum">-</span>%</p>
+                </div>
+                <div>
+                    <p class="text-xs text-blue-500 uppercase tracking-wide">Cloud Cover</p>
+                    <p class="font-bold text-blue-900 text-lg"><span id="w-cloud">-</span>%</p>
+                </div>
+                <div>
+                    <p class="text-xs text-blue-500 uppercase tracking-wide">Wind</p>
+                    <p class="font-bold text-blue-900 text-lg"><span id="w-wind">-</span> m/s</p>
+                </div>
+                <div class="col-span-2 mt-2">
+                    <p class="text-sm font-medium text-blue-800" id="w-desc">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Manual Override -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <button id="manual-toggle" class="w-full px-6 py-4 flex justify-between items-center text-left min-h-[44px] bg-gray-50 hover:bg-gray-100 font-medium">
+                Manual Override
+                <i class="fa-solid fa-chevron-down transform transition-transform" id="manual-icon"></i>
+            </button>
+            <div id="manual-form" class="hidden p-6 border-t border-gray-100 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Temperature (&deg;C)</label>
+                        <input type="number" id="m-temp" class="mt-1 block w-full rounded border-gray-300 border p-2 min-h-[44px]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Cloud Cover (%)</label>
+                        <input type="number" id="m-cloud" class="mt-1 block w-full rounded border-gray-300 border p-2 min-h-[44px]">
+                    </div>
+                </div>
+                <button id="predict-manual-btn" class="w-full bg-gray-800 hover:bg-black text-white font-semibold rounded px-6 py-3 min-h-[44px] transition-colors">
+                    Predict Manual
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Panel -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6 flex flex-col justify-center">
+        <h2 class="font-bold text-gray-800 text-xl border-b pb-4 mb-6">Live Solar Energy Prediction</h2>
+        
+        <div id="result-header" class="hidden text-center mb-6">
+            <p class="text-sm text-gray-500"><span id="res-time"></span> WAT</p>
+            <h3 class="text-2xl font-bold text-gray-800" id="res-city">City</h3>
+            <p class="text-green-600 font-medium text-sm"><i class="fa-solid fa-location-dot"></i> <span id="res-zone"></span></p>
+        </div>
+        
+        <div id="results-skeleton" class="animate-pulse space-y-4 py-8 text-center text-gray-400">
+            <i class="fa-solid fa-solar-panel text-5xl mb-4 opacity-50"></i>
+            <p>Select a city and click predict to see results.</p>
+        </div>
+        
+        <div id="results-cards" class="hidden space-y-4">
+            
+            <div class="border rounded-lg p-4 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h4 class="font-bold text-gray-700">Artificial Neural Network</h4>
+                    <p class="text-xs text-gray-500">Baseline Deep Learning</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xl font-bold text-gray-900"><span id="res-ann">0.00</span></p>
+                    <p class="text-xs text-gray-500">kWh</p>
+                </div>
+            </div>
+            
+            <div class="border rounded-lg p-4 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h4 class="font-bold text-gray-700">Convolutional Neural Network</h4>
+                    <p class="text-xs text-gray-500">Spatial Pattern Recognition</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xl font-bold text-gray-900"><span id="res-cnn">0.00</span></p>
+                    <p class="text-xs text-gray-500">kWh</p>
+                </div>
+            </div>
+            
+            <div class="border-2 border-green-500 rounded-lg p-4 flex justify-between items-center bg-green-50 relative overflow-hidden shadow-sm">
+                <!-- Badge -->
+                <div class="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">RECOMMENDED</div>
+                
+                <div>
+                    <h4 class="font-bold text-green-900">Hybrid CNN-LSTM</h4>
+                    <p class="text-xs text-green-700">Spatio-Temporal Model</p>
+                </div>
+                <div class="text-right mt-2">
+                    <p class="text-2xl font-black text-green-700"><span id="res-lstm">0.00</span></p>
+                    <p class="text-xs font-bold text-green-600">kWh</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const citySelect = document.getElementById('predict-city');
+        const predictBtn = document.getElementById('predict-btn');
+        const errorMsg = document.getElementById('error-msg');
+        
+        let currentWeatherData = null;
+        
+        // Setup dropdown
+        try {
+            const res = await fetch('/api/cities');
+            const cities = await res.json();
+            
+            citySelect.innerHTML = '';
+            
+            // Check if URL has ?city=X
+            const urlParams = new URLSearchParams(window.location.search);
+            const defaultCity = urlParams.get('city');
+
+            Object.keys(cities).forEach(city => {
+                const opt = document.createElement('option');
+                opt.value = city;
+                opt.innerText = `${city} (${cities[city].zone})`;
+                citySelect.appendChild(opt);
+                
+                if(defaultCity === city) opt.selected = true;
+            });
+            
+            // Fetch weather for initially selected
+            fetchWeather(citySelect.value);
+            
+        } catch(e) {
+            console.error(e);
+            citySelect.innerHTML = '<option>Error loading cities</option>';
+        }
+        
+        citySelect.addEventListener('change', (e) => fetchWeather(e.target.value));
+        
+        // Manual override toggle
+        document.getElementById('manual-toggle').addEventListener('click', () => {
+            document.getElementById('manual-form').classList.toggle('hidden');
+            document.getElementById('manual-icon').classList.toggle('rotate-180');
+        });
+        
+        async function fetchWeather(city) {
+            document.getElementById('weather-loading').classList.remove('hidden');
+            document.getElementById('weather-info').classList.add('hidden');
+            predictBtn.disabled = true;
+            
+            try {
+                const res = await fetch(`/api/weather/${encodeURIComponent(city)}`);
+                const data = await res.json();
+                
+                currentWeatherData = data;
+                
+                document.getElementById('w-temp').innerText = parseFloat(data.temperature).toFixed(1);
+                document.getElementById('w-hum').innerText = parseFloat(data.humidity).toFixed(0);
+                document.getElementById('w-cloud').innerText = parseFloat(data.cloud_cover).toFixed(0);
+                document.getElementById('w-wind').innerText = parseFloat(data.wind_speed).toFixed(1);
+                document.getElementById('w-desc').innerText = data.description;
+                
+                // Pre-fill manual
+                document.getElementById('m-temp').value = parseFloat(data.temperature).toFixed(1);
+                document.getElementById('m-cloud').value = parseFloat(data.cloud_cover).toFixed(0);
+                
+                document.getElementById('weather-loading').classList.add('hidden');
+                document.getElementById('weather-info').classList.remove('hidden');
+                
+                predictBtn.disabled = false;
+            } catch(e) {
+                console.error(e);
+                document.getElementById('weather-loading').innerText = "Failed to load weather.";
+            }
+        }
+        
+        predictBtn.addEventListener('click', () => doPrediction(false));
+        document.getElementById('predict-manual-btn').addEventListener('click', () => doPrediction(true));
+        
+        async function doPrediction(isManual) {
+            const city = citySelect.value;
+            errorMsg.classList.add('hidden');
+            predictBtn.disabled = true;
+            predictBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Analyzing...';
+            
+            let payload = { city: city };
+            
+            if (isManual) {
+                payload.weather = {
+                    temperature: parseFloat(document.getElementById('m-temp').value) || 25,
+                    cloud_cover: parseFloat(document.getElementById('m-cloud').value) || 20,
+                    humidity: 60,
+                    wind_speed: 3
+                };
+            }
+            
+            try {
+                const res = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || "Prediction failed");
+                }
+                
+                showResults(data);
+                
+            } catch(e) {
+                errorMsg.innerText = e.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                predictBtn.disabled = false;
+                predictBtn.innerHTML = 'Predict from Live Weather';
+            }
+        }
+        
+        function showResults(data) {
+            document.getElementById('results-skeleton').classList.add('hidden');
+            document.getElementById('result-header').classList.remove('hidden');
+            document.getElementById('results-cards').classList.remove('hidden');
+            
+            const d = new Date();
+            document.getElementById('res-time').innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('res-city').innerText = data.city;
+            document.getElementById('res-zone').innerText = `${data.zone} Zone | Lat: ${data.lat}, Lon: ${data.lon}`;
+            
+            // Animate numbers
+            animateValue('res-ann', 0, data.predictions.ANN, 1000);
+            animateValue('res-cnn', 0, data.predictions.CNN, 1000);
+            animateValue('res-lstm', 0, data.predictions.CNN_LSTM, 1000);
+        }
+        
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerText = (progress * (end - start) + start).toFixed(2);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+    });
+</script>
+{% endblock %}

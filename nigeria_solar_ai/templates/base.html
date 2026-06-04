@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nigeria Solar AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Configuration -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        :root {
+            /* Responsive typography using clamp */
+        }
+        html {
+            font-size: clamp(14px, 2vw, 18px);
+        }
+        h1 {
+            font-size: clamp(1.4rem, 4vw, 2.5rem);
+        }
+        h2 {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+        }
+        
+        .nav-link {
+            transition: color 0.2s;
+        }
+        
+        .nav-link:hover {
+            color: #facc15; /* Yellow */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <!-- Green and Yellow theme inspired by Nigerian flag -->
+    <nav class="bg-green-700 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="flex items-center space-x-2 text-xl font-bold">
+                    <i class="fa-solid fa-solar-panel text-yellow-400"></i>
+                    <span>NigSolar AI</span>
+                </a>
+                
+                <!-- Desktop Nav -->
+                <div class="hidden lg:flex space-x-6">
+                    <a href="/" class="nav-link"><i class="fa-solid fa-chart-pie mr-1"></i> Dashboard</a>
+                    <a href="/predict" class="nav-link"><i class="fa-solid fa-bolt mr-1"></i> Predict</a>
+                    <a href="/results" class="nav-link"><i class="fa-solid fa-square-poll-vertical mr-1"></i> Results</a>
+                    <a href="/map" class="nav-link"><i class="fa-solid fa-map-location-dot mr-1"></i> Map</a>
+                </div>
+                
+                <!-- Mobile hamburger -->
+                <div class="lg:hidden flex items-center">
+                    <button class="outline-none mobile-menu-button px-6 py-3 min-h-[44px]">
+                        <i class="fa-solid fa-bars text-2xl hover:text-yellow-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="hidden mobile-menu lg:hidden bg-green-800">
+            <ul>
+                <li><a href="/" class="block px-4 py-4 text-white hover:bg-green-600 font-medium">Dashboard</a></li>
+                <li><a href="/predict" class="block px-4 py-4 text-white hover:bg-green-600 font-medium">Predict</a></li>
+                <li><a href="/results" class="block px-4 py-4 text-white hover:bg-green-600 font-medium">Results</a></li>
+                <li><a href="/map" class="block px-4 py-4 text-white hover:bg-green-600 font-medium">Map</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-auto">
+        <div class="w-full max-w-6xl mx-auto px-4 py-6 text-center text-sm md:text-base opacity-80">
+            <p>Nigeria Solar AI</p>
+            <p>Madonna University CS Project</p>
+            <p class="text-xs mt-2 text-gray-400">Data from NASA POWER and OpenWeatherMap</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const btn = document.querySelector('button.mobile-menu-button');
+        const menu = document.querySelector('.mobile-menu');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

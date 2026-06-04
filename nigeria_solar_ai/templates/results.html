@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="font-bold text-gray-800">Model Evaluation Metrics</h1>
+    <p class="text-gray-500">Performance comparison of ANN, CNN, and Hybrid architectures.</p>
+</div>
+
+<!-- Metrics Table -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+    <div class="p-6 border-b border-gray-100 pb-4">
+        <h2 class="font-bold text-gray-800 text-lg">Test Set Error Metrics</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Model</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">MAE (kWh)</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">RMSE (kWh)</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">MAPE (%)</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">R² Score</th>
+                </tr>
+            </thead>
+            <tbody id="metrics-body" class="bg-white divide-y divide-gray-200 text-sm">
+                <tr><td colspan="5" class="text-center py-4 text-gray-400">Loading metrics...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Regional Comparison -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-bold text-sm text-gray-700 mb-4 uppercase tracking-wide">Regional Yield Distribution</h3>
+        <div class="w-full h-64">
+            <canvas id="regionalChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Model R2 Comparison -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-bold text-sm text-gray-700 mb-4 uppercase tracking-wide">Model R² Performance</h3>
+        <div class="w-full h-64">
+            <canvas id="r2Chart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    // Fetch Metrics
+    try {
+        const res = await fetch('/api/metrics');
+        if(!res.ok) throw new Error("Metrics not trained");
+        const data = await res.json();
+        
+        const tbody = document.getElementById('metrics-body');
+        tbody.innerHTML = '';
+        
+        let r2_data = [];
+        let labels = [];
+        
+        Object.keys(data).forEach(model => {
+            const m = data[model];
+            r2_data.push(m.R2);
+            labels.push(model.replace('_', '-'));
+            
+            const isBest = model === 'CNN_LSTM';
+            const tr = document.createElement('tr');
+            if(isBest) tr.classList.add('bg-green-50');
+            
+            tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap font-medium ${isBest ? 'text-green-700' : 'text-gray-900'}">
+                    ${model.replace('_', '-')} ${isBest ? '<i class="fa-solid fa-star text-yellow-500 ml-1"></i>' : ''}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-gray-600">${m.MAE.toFixed(4)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-gray-600">${m.RMSE.toFixed(4)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-gray-600">${m.MAPE.toFixed(2)}%</td>
+                <td class="px-6 py-4 whitespace-nowrap font-semibold ${isBest ? 'text-green-600' : 'text-gray-600'}">${m.R2.toFixed(4)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        // R2 Chart
+        new Chart(document.getElementById('r2Chart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'R² Score',
+                    data: r2_data,
+                    backgroundColor: ['#64748b', '#3b82f6', '#22c55e'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { min: 0, max: 1 } }
+            }
+        });
+        
+    } catch(err) {
+        document.getElementById('metrics-body').innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Failed to load metrics. Have you run train_models.py?</td></tr>`;
+    }
+    
+    // Regional Chart (Mocked here since we average directly from the original chart api)
+    try {
+        const res = await fetch('/api/chart/compare');
+        const chartData = await res.json();
+        
+        // aggregate by zone
+        let zones = {'South': [], 'Middle Belt': [], 'North': []};
+        chartData.zones.forEach((z, i) => {
+            zones[z].push(chartData.values[i]);
+        });
+        
+        let avgZones = [
+            zones['South'].reduce((a,b)=>a+b,0)/zones['South'].length,
+            zones['Middle Belt'].reduce((a,b)=>a+b,0)/zones['Middle Belt'].length,
+            zones['North'].reduce((a,b)=>a+b,0)/zones['North'].length
+        ];
+        
+        new Chart(document.getElementById('regionalChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['South', 'Middle Belt', 'North'],
+                datasets: [{
+                    data: avgZones,
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)', // Green
+                        'rgba(234, 179, 8, 0.8)', // Yellow
+                        'rgba(239, 68, 68, 0.8)'  // Red
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    } catch(e) {}
+});
+</script>
+{% endblock %}

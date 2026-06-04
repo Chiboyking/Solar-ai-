@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8">
+    
+    <!-- Hero Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6 md:p-10 border border-gray-100 text-center">
+        <h1 class="text-green-800 font-bold mb-4">Nigeria Solar Energy AI Predictor</h1>
+        <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+            Harnessing Machine Learning to forecast solar photovoltaic generation 
+            across Nigeria's distinct climate zones using historical meteorology and live satellite data.
+        </p>
+        <a href="/predict" class="inline-block bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-center px-6 py-3 min-h-[44px] w-full md:w-auto transition-colors shadow-md">
+            Get Prediction <i class="fa-solid fa-arrow-right ml-2"></i>
+        </a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="bg-blue-100 text-blue-600 p-3 rounded-full h-12 w-12 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-tree-city"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Cities</p>
+                <p class="text-3xl font-bold text-gray-800">11</p>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="bg-yellow-100 text-yellow-600 p-3 rounded-full h-12 w-12 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-sun_bright"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Best Zone</p>
+                <p class="text-3xl font-bold text-gray-800">North</p>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div class="bg-green-100 text-green-600 p-3 rounded-full h-12 w-12 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-ranking-star"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Top City Today</p>
+                <p class="text-xl font-bold text-gray-800">Sokoto</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Panel & Chart (Desktop 2-col, Mobile stack) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-1 flex flex-col justify-center">
+            <h2 class="font-bold text-gray-800 mb-4">Quick Predict</h2>
+            <p class="text-sm text-gray-500 mb-6">Select a city to estimate real-time solar generation capacity using live OpenWeatherMap data.</p>
+            
+            <form action="/predict" method="GET" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Select City</label>
+                    <select name="city" id="city-select" class="block w-full rounded-md border-gray-300 border bg-white px-3 py-3 w-full min-h-[44px] shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-6 py-3 min-h-[44px] shadow-sm transition-colors">
+                    Predict Now
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
+            <h2 class="font-bold text-gray-800 mb-4">Average Daily Solar Output</h2>
+            <div class="w-full h-64 md:h-80 relative">
+                <canvas id="cityChart"></canvas>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch cities
+    try {
+        const res = await fetch('/api/cities');
+        const cities = await res.json();
+        
+        const select = document.getElementById('city-select');
+        Object.keys(cities).forEach(city => {
+            const opt = document.createElement('option');
+            opt.value = city;
+            opt.innerText = `${city} (${cities[city].zone})`;
+            select.appendChild(opt);
+        });
+    } catch(err) {
+        console.error("Error fetching cities", err);
+    }
+    
+    // Fetch Chart Data
+    try {
+        const res = await fetch('/api/chart/compare');
+        const data = await res.json();
+        
+        // Define colors per zone
+        const colors = data.zones.map(z => {
+            if(z === 'North') return 'rgba(239, 68, 68, 0.7)'; // Red
+            if(z === 'Middle Belt') return 'rgba(234, 179, 8, 0.7)'; // Yellow
+            return 'rgba(34, 197, 94, 0.7)'; // Green (South)
+        });
+        
+        const ctx = document.getElementById('cityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.cities,
+                datasets: [{
+                    label: 'kWh/m² per day',
+                    data: data.values,
+                    backgroundColor: colors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    } catch (err) {
+        console.error("Error loading chart data", err);
+    }
+});
+</script>
+{% endblock %}
